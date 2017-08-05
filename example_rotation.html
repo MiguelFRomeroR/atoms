@@ -13,7 +13,8 @@
 <script src="http://threejs.org/build/three.min.js"></script>
 <script src="http://threejs.org/examples/js/controls/OrbitControls.js"></script>
 <script>
-	var parent, renderer, scene, camera, controls;
+	var parent, renderer, scene, camera, controls, clock;
+	var electron1, electron2, electron3, s1_orbital;
 
 	init();
 	animate();
@@ -53,49 +54,72 @@
 		
 		// axes
 		scene.add( new THREE.AxisHelper( 20 ) );
-
-		// geometry
+		
+		// objects
+		//// nucleus
 		var nucleus_geometry = new THREE.SphereGeometry( 0.5, 32, 32 );
-		
-		// material
-		var material = new THREE.MeshBasicMaterial( {
-			color: 0xffffff,
-			wireframe: true
-		} );
-		
-		// parent
-		parent = new THREE.Object3D();
-		scene.add( parent );
-
-		// pivots
-		var pivot_electron1 = new THREE.Object3D();
-		var pivot_electron2 = new THREE.Object3D();
-		pivot_electron1.rotation.z = 1 * Math.PI / 2;
-		pivot_electron2.rotation.z = 3 * Math.PI / 2;
-		parent.add( pivot_electron1 );
-		parent.add( pivot_electron2 );
-
-		// mesh
-		var nucleus = new THREE.Mesh( nucleus_geometry, material );
-		var electron1 = new THREE.Mesh( nucleus_geometry, material );
-		var electron2 = new THREE.Mesh( nucleus_geometry, material );
-		electron1.position.y = 5;
-		electron2.position.y = 5;
+		var nucleus_material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+		var nucleus = new THREE.Mesh( nucleus_geometry, nucleus_material );
 		scene.add( nucleus );
-		pivot_electron1.add( electron1 );
-		pivot_electron2.add( electron2 );
+		//// electrons
+		var electron_geometry = new THREE.SphereGeometry( 0.2, 32, 32 );
+		var electron_material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+		////// electron 1
+		electron1 = new THREE.Mesh( electron_geometry, electron_material );
+		nucleus.add( electron1 );
+		electron1.position.set( -5, 5, 0 );
+		////// electron 2
+		electron2 = new THREE.Mesh( electron_geometry, electron_material );
+		nucleus.add( electron2 );
+		electron1.position.set( 5, 5, 0 );
+		////// electron 3
+		electron3 = new THREE.Mesh( electron_geometry, electron_material );
+		nucleus.add( electron3 );
+		electron1.position.set( 0, 0, 5 );
+		//// orbitals
+		var orbital_geometry = new THREE.SphereGeometry( 5, 32, 32 );
+		var orbital_material = new THREE.MeshBasicMaterial( { color: 0xffffff, transparent: true, opacity: 0.1 } );
+		s1_orbital = new THREE.Mesh( orbital_geometry, orbital_material );
+		nucleus.add( s1_orbital );
 		
+		// clock timer to animate motion
+		clock = new THREE.Clock();
 	}
 
 	function animate() {
 
 		requestAnimationFrame( animate );
+		
+		// This gives us a running timer for our orbiting electrons.
+		var t = clock.getElapsedTime();
+		
+		renderer.render( scene, camera );
 
-		parent.rotation.y += 0.1;
+		// orbit from bottom right to top left
+		//
+		//                            movement speed
+		//                               |
+		//                               |  orbit distance
+		//                               |      |
+		//                               v      v
+		electron1.position.x = Math.sin(5*t) * -5;
+		electron1.position.y = Math.sin(5*t) * 5;
+		electron1.position.z = Math.cos(5*t) * 5;
+		
+		// orbit from top right to bottom left
+		electron2.position.x = Math.cos(5*t) * 5;
+		electron2.position.y = Math.cos(5*t) * 5;
+		electron2.position.z = Math.sin(5*t) * 5;
+
+		// Offset from our timer so the electrons don't smash into each other.
+		var tOffset = 1.5 + clock.getElapsedTime();
+
+		// orbit from the bottom to the top
+		electron3.position.x = Math.sin(5*tOffset) * 0;
+		electron3.position.y = Math.sin(5*tOffset) * 5;
+		electron3.position.z = Math.cos(5*tOffset) * 5;
 		
 		controls.update();
-
-		renderer.render( scene, camera );
 
 	}
 
